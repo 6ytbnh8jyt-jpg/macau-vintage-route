@@ -145,7 +145,7 @@ body {
 
 <div class="header">
   <h1>澳门中古店精华路线</h1>
-  <div class="sub">6月4日（周日）· VINTAGE ROUTE · MACAU</div>
+  <div class="sub">6月4日（周四）· VINTAGE ROUTE · MACAU</div>
 </div>
 
 <div class="tabs">
@@ -212,7 +212,8 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
 // DATA
-const isWeekend = [0,6].includes(new Date().getDay());
+const tripDate = new Date(2026, 5, 4); // 6月4日 周四
+const isWeekend = [0,6].includes(tripDate.getDay());
 
 const zones = [
   {
