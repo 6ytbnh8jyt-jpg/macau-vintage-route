@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>6月4日 · 澳门中古店精华路线</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #fdf6f0;
+  --card: #fff;
+  --accent: #8B4513;
+  --gold: #C9A96E;
+  --text: #3c2415;
+  --muted: #8b7355;
+  --tag-clothes: #e07b5a;
+  --tag-bags: #b8860b;
+  --tag-acc: #7b9e6b;
+  --tag-food: #d4694c;
+  --zone1: #E8C4A2;
+  --zone2: #D4A574;
+  --zone3: #C4956A;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Header */
+.header {
+  background: linear-gradient(135deg, #3c2415 0%, #5a3825 50%, #8B4513 100%);
+  color: #fff;
+  padding: 20px 16px 24px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+}
+.header h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+.header .sub { font-size: 13px; color: var(--gold); margin-top: 4px; letter-spacing: 2px; }
+
+/* Tabs */
+.tabs { display: flex; background: var(--card); position: sticky; top: 88px; z-index: 999; border-bottom: 2px solid #eee; }
+.tab { flex: 1; text-align: center; padding: 12px 4px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--muted); transition: .2s; position: relative; }
+.tab.active { color: var(--accent); }
+.tab.active::after { content: ''; position: absolute; bottom: -2px; left: 20%; width: 60%; height: 2px; background: var(--accent); }
+
+/* Panels */
+.panel { display: none; padding: 16px; }
+.panel.active { display: block; }
+
+/* Info bar */
+.info-bar { display: flex; gap: 8px; padding: 0 16px 12px; flex-wrap: wrap; }
+.info-chip { font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.chip-weekend { background: #FFF3E0; color: #E65100; }
+.chip-cash { background: #FFF9C4; color: #F57F17; }
+.chip-time { background: #E8EAF6; color: #283593; }
+.chip-upstairs { background: #FCE4EC; color: #880E4F; }
+
+/* Map */
+#map { height: 320px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 12px; }
+.leaflet-popup-content { font-size: 13px; line-height: 1.5; }
+.leaflet-popup-content strong { color: var(--accent); }
+.pop-tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-right: 4px; color: #fff; }
+.pop-tag.zone1 { background: var(--zone1); color: #5a3825; }
+.pop-tag.zone2 { background: var(--zone2); color: #5a3825; }
+.pop-tag.zone3 { background: var(--zone3); color: #5a3825; }
+.pop-tag.food { background: var(--tag-food); }
+
+/* Preference */
+.pref-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.pref-btn { flex: 1; min-width: 60px; padding: 8px 6px; border: 2px solid #e0d5c7; border-radius: 10px; background: var(--card); font-size: 12px; font-weight: 600; cursor: pointer; transition: .2s; text-align: center; }
+.pref-btn.active { border-color: var(--accent); background: #f5ede3; color: var(--accent); }
+.pref-btn .emoji { font-size: 18px; display: block; margin-bottom: 2px; }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--zone1), var(--zone2), var(--zone3), #ddd); }
+.step { margin-bottom: 16px; position: relative; background: var(--card); border-radius: 12px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.step::before { content: ''; position: absolute; left: -20px; top: 18px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg); z-index: 1; }
+.step.transport::before { background: #90A4AE; border-color: #90A4AE; }
+.step-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.step-title { font-size: 15px; font-weight: 700; }
+.step-time { font-size: 11px; color: var(--muted); background: #f5f0e8; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.step-desc { font-size: 13px; color: var(--muted); }
+.step-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.step-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; color: #fff; font-weight: 600; }
+.tag-zone1 { background: var(--zone1); color: #5a3825; }
+.tag-zone2 { background: var(--zone2); color: #5a3825; }
+.tag-zone3 { background: var(--zone3); color: #5a3825; }
+.tag-food { background: var(--tag-food); }
+.tag-transport { background: #90A4AE; }
+
+/* Expandable */
+.step-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0e8db; font-size: 12px; color: var(--muted); }
+.step-detail.show { display: block; }
+.step-detail ul { padding-left: 16px; }
+.step-detail li { margin-bottom: 4px; }
+.expand-btn { font-size: 11px; color: var(--accent); cursor: pointer; background: none; border: none; padding: 2px 0; margin-top: 4px; font-weight: 600; }
+
+/* Stats */
+.stats { display: flex; gap: 8px; margin-bottom: 12px; }
+.stat { flex: 1; background: var(--card); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.stat-val { font-size: 24px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* QR */
+.qr-section { text-align: center; padding: 20px; }
+.qr-section canvas { border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+.qr-section .tip { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+/* Total bar */
+.total-bar { background: var(--accent); color: #fff; padding: 12px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.total-bar .label { font-size: 13px; opacity: .9; }
+.total-bar .val { font-size: 20px; font-weight: 700; }
+
+/* Food cards */
+.food-list { display: flex; flex-direction: column; gap: 8px; }
+.food-card { background: var(--card); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.food-emoji { font-size: 28px; }
+.food-info { flex: 1; }
+.food-name { font-size: 14px; font-weight: 700; }
+.food-item { font-size: 12px; color: var(--muted); }
+.food-time { font-size: 11px; color: var(--tag-food); font-weight: 600; }
+
+/* Transport cards */
+.trans-card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.trans-card .route { font-size: 14px; font-weight: 700; }
+.trans-card .detail { font-size: 12px; color: var(--muted); }
+.trans-card .price { font-size: 13px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+
+@media (max-width: 360px) {
+  .header h1 { font-size: 18px; }
+  .tab { font-size: 12px; padding: 10px 2px; }
+  #map { height: 250px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>澳门中古店精华路线</h1>
+  <div class="sub">6月4日（周日）· VINTAGE ROUTE · MACAU</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="route">路线</button>
+  <button class="tab" data-tab="map">地图</button>
+  <button class="tab" data-tab="zones">三大区</button>
+  <button class="tab" data-tab="food">小吃</button>
+  <button class="tab" data-tab="info">交通</button>
+</div>
+
+<!-- Route Panel -->
+<div class="panel active" id="panel-route">
+  <div class="info-bar" id="infoBar"></div>
+  <div class="pref-row" id="prefRow">
+    <button class="pref-btn active" data-mode="all"><span class="emoji">🎯</span>综合</button>
+    <button class="pref-btn" data-mode="clothes"><span class="emoji">👗</span>衣服</button>
+    <button class="pref-btn" data-mode="bags"><span class="emoji">👜</span>包包</button>
+    <button class="pref-btn" data-mode="acc"><span class="emoji">💍</span>饰品</button>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="timeline" id="timeline"></div>
+  <div class="total-bar">
+    <span class="label">预计总时长（纯逛）</span>
+    <span class="val" id="totalTime">2.5h</span>
+  </div>
+</div>
+
+<!-- Map Panel -->
+<div class="panel" id="panel-map">
+  <div id="map"></div>
+  <div class="stats" id="mapStats"></div>
+</div>
+
+<!-- Zones Panel -->
+<div class="panel" id="panel-zones"></div>
+
+<!-- Food Panel -->
+<div class="panel" id="panel-food">
+  <div class="food-list" id="foodList"></div>
+</div>
+
+<!-- Info Panel -->
+<div class="panel" id="panel-info">
+  <div id="transportList"></div>
+  <div style="background:var(--card);border-radius:12px;padding:14px;margin-top:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px;">重要提示</div>
+    <div style="font-size:12px;color:var(--muted);line-height:2;">
+      <div>👟 澳门半岛全程石板路，穿平底鞋</div>
+      <div>🕚 中古店不少 11:00-12:00 才营业</div>
+      <div>💵 很多小店只收 MOP/HKD 现金</div>
+      <div>🏢 白马行区注意「楼上铺」招牌</div>
+      <div>📅 周末：塔石广场创意市集 + 关前街活动</div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Panel (hidden, shown via button) -->
+<div class="qr-section" id="qrSection" style="display:none;">
+  <div style="font-weight:700;margin-bottom:8px;">📱 扫描二维码在手机上查看</div>
+  <div id="qrCode"></div>
+  <div class="tip" id="qrUrl"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+// DATA
+const isWeekend = [0,6].includes(new Date().getDay());
+
+const zones = [
+  {
+    id: 'zone1', name: '关前街文创区', time: [40,50], icon: '🏘️', color: 'zone1',
+    lat: 22.1956, lng: 113.5399,
+    desc: '店铺分散在巷子里，需要拐进去扫。周末可能有额外 pop-up 活动。',
+    subs: [
+      { name: '关前正街文创村', type: 'vintage pop-up、古着摊位、手工饰品', loc: '关前正街主街' },
+      { name: '俊秀里', type: '独立设计师古着、二手服饰、vintage 杂货', loc: '关前正街旁小巷' },
+      { name: '果栏街', type: '旧物杂货、二手书店、复古小物件', loc: '关前街往西延伸' },
+      { name: '烂鬼楼巷', type: '老澳门旧货店、偶尔周末二手市集', loc: '果栏街附近' }
+    ],
+    affinity: { clothes: 3, bags: 1, acc: 3 }
+  },
+  {
+    id: 'zone2', name: '疯堂斜巷（核心）', time: [60,90], icon: '⭐', color: 'zone2',
+    lat: 22.1969, lng: 113.5425,
+    desc: '澳门中古灵魂区，人少文艺，本地设计师店为主，不容易撞款。周末氛围最好，部分店平日只开下午。',
+    subs: [
+      { name: '疯堂斜巷主街', type: '独立古着店、vintage 服饰、复古饰品', loc: '整条街' },
+      { name: '婆仔屋文创空间', type: '百年建筑内定期古着/手作展售', loc: '疯堂斜巷内' },
+      { name: '圣禄杞街', type: '固定 vintage 服饰店、二手设计品牌', loc: '疯堂斜巷旁' },
+      { name: '望德堂坊', type: '艺术工作室、独立设计师 pop-up', loc: '疯堂斜巷周边' }
+    ],
+    affinity: { clothes: 5, bags: 2, acc: 4 }
+  },
+  {
+    id: 'zone3', name: '水坑尾街 / 白马行', time: [30,45], icon: '🛍️', color: 'zone3',
+    lat: 22.1947, lng: 113.5435,
+    desc: '和前面衣服/饰品互补，偏中古包和二手奢侈品。澳门特色「楼上铺」文化——店铺在写字楼里，要进大厦看楼层指引。',
+    subs: [
+      { name: '白马行（伯多禄局长街）', type: '中古奢侈品包、二手名表、vintage 饰品', loc: '楼上铺为主，注意看招牌' },
+      { name: '水坑尾街', type: '二手店、运动鞋 vintage、平价二手服饰', loc: '主街' },
+      { name: '塔石广场', type: '周末创意市集', loc: '广场（仅周末）' }
+    ],
+    affinity: { clothes: 2, bags: 5, acc: 3 }
+  }
+];
+
+const foods = [
+  { name: '恒友鱼蛋', item: '咖喱鱼蛋+芝士丸', stop: '5min', area: '关前街→大三巴路过', lat: 22.1963, lng: 113.5405 },
+  { name: '柠檬车露', item: '手工雪糕（意式Gelato）', stop: '5min', area: '关前街→大三巴路过', lat: 22.1960, lng: 113.5410 },
+  { name: '礼记雪糕', item: '红豆雪条、三文治雪糕', stop: '10min', area: '疯堂斜巷→水坑尾路过', lat: 22.1975, lng: 113.5430 },
+  { name: '义顺牛奶', item: '双皮奶 / 姜汁撞奶', stop: '15min', area: '议事亭前地', lat: 22.1935, lng: 113.5403 },
+  { name: '祥记面家', item: '虾籽捞面（米其林推荐）', stop: '20min', area: '福隆新街', lat: 22.1930, lng: 113.5395 }
+];
+
+const transport = [
+  { from:'威尼斯人', to:'新马路', mode:'巴士 25/26A/33', time:'20-25min', cost:'MOP 6', icon:'🚌' },
+  { from:'威尼斯人', to:'新马路', mode:'的士', time:'~15min', cost:'MOP 70-90', icon:'🚕' },
+  { from:'议事亭前地', to:'威尼斯人', mode:'永利/星际免费穿梭巴士', time:'15-20min', cost:'免费', icon:'🆓' },
+  { from:'议事亭前地', to:'威尼斯人', mode:'巴士 25/26A', time:'20-25min', cost:'MOP 6', icon:'🚌' }
+];
+
+const landmarks = [
+  { name:'威尼斯人（起点/终点）', lat:22.1486, lng:113.5609, type:'poi', icon:'🏨' },
+  { name:'大三巴牌坊', lat:22.1976, lng:113.5410, type:'poi', icon:'⛪' },
+  { name:'议事亭前地', lat:22.1935, lng:113.5405, type:'poi', icon:'⛲' },
+];
+
+// Map layers
+let map, zoneLayer, foodLayer, poiLayer, routeLayer;
+let mapInitialized = false;
+
+function initMap() {
+  if (mapInitialized) { map.invalidateSize(); return; }
+  mapInitialized = true;
+  map = L.map('map', { zoomControl: false }).setView([22.193, 113.542], 15);
+  L.control.zoom({ position:'bottomright' }).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> | 澳门中古店路线'
+  }).addTo(map);
+
+  zoneLayer = L.layerGroup().addTo(map);
+  foodLayer = L.layerGroup().addTo(map);
+  poiLayer = L.layerGroup().addTo(map);
+  routeLayer = L.layerGroup().addTo(map);
+
+  const zoneColors = { zone1: '#E8C4A2', zone2: '#D4A574', zone3: '#C4956A' };
+
+  zones.forEach(z => {
+    const m = L.marker([z.lat, z.lng], {
+      icon: L.divIcon({
+        html: `<div style="background:${zoneColors[z.id]};color:#3c2415;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #8B4513;font-weight:bold;">${z.icon}</div>`,
+        className: '', iconSize: [32,32], iconAnchor: [16,16]
+      })
+    }).bindPopup(`<strong>${z.name}</strong><br>${z.desc}<br><small>建议 ${z.time[0]}-${z.time[1]} 分钟</small>`);
+    zoneLayer.addLayer(m);
+  });
+
+  foods.forEach(f => {
+    const m = L.marker([f.lat, f.lng], {
+      icon: L.divIcon({
+        html: `<div style="background:var(--tag-food);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);">🍴</div>`,
+        className: '', iconSize: [22,22], iconAnchor: [11,11]
+      })
+    }).bindPopup(`<span class="pop-tag food">小吃</span> <strong>${f.name}</strong><br>${f.item}<br>停留 ${f.stop}`);
+    foodLayer.addLayer(m);
+  });
+
+  landmarks.forEach(lm => {
+    const m = L.marker([lm.lat, lm.lng], {
+      icon: L.divIcon({
+        html: `<div style="background:#fff;color:#3c2415;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #90A4AE;">${lm.icon}</div>`,
+        className: '', iconSize: [26,26], iconAnchor: [13,13]
+      })
+    }).bindPopup(`<strong>${lm.name}</strong>`);
+    poiLayer.addLayer(m);
+  });
+
+  // Route line
+  const routePoints = [
+    [22.1486, 113.5609], // 威尼斯人
+    [22.1937, 113.5395], // 新马路
+    [22.1956, 113.5399], // 关前街
+    [22.1976, 113.5410], // 大三巴
+    [22.1969, 113.5425], // 疯堂斜巷
+    [22.1947, 113.5435], // 水坑尾
+    [22.1935, 113.5405], // 议事亭
+    [22.1486, 113.5609], // 威尼斯人
+  ];
+  routeLayer.addLayer(L.polyline(routePoints, {
+    color: '#8B4513', weight: 3, dashArray: '8,6', opacity: .6
+  }));
+
+  // Zone circles
+  zones.forEach(z => {
+    L.circle([z.lat, z.lng], {
+      radius: 180, color: zoneColors[z.id], fillColor: zoneColors[z.id], fillOpacity: .15, weight: 1
+    }).addTo(map);
+  });
+}
+
+// Timeline rendering
+function renderTimeline(mode) {
+  const tl = document.getElementById('timeline');
+  let html = '';
+
+  // Start
+  html += `<div class="step transport">
+    <div class="step-header"><span class="step-title">🏨 威尼斯人出发</span><span class="step-time">起点</span></div>
+    <div class="step-desc">路氹金光大道 · 巴士/的士前往澳门半岛</div>
+    <span class="step-tag tag-transport">交通 20-25min</span>
+  </div>`;
+
+  // Transport to first zone
+  html += `<div class="step transport">
+    <div class="step-header"><span class="step-title">🚌 前往新马路</span><span class="step-time">20-25min</span></div>
+    <div class="step-desc">巴士 25/26A/33 · MOP 6，或的士 ~MOP 80</div>
+    <span class="step-tag tag-transport">交通</span>
+  </div>`;
+
+  // Three zones with affinity-adjusted times
+  const multipliers = { all: 1, clothes: 1, bags: 1, acc: 1 };
+  const boost = { clothes: [1.3, 0.7, 0.5], bags: [0.5, 0.8, 1.5], acc: [1.3, 1.2, 0.6], all: [1, 1, 1] };
+  const b = boost[mode] || boost.all;
+
+  const zoneIcons = ['🏘️', '⭐', '🛍️'];
+  const timeAdjusted = zones.map((z, i) => ({
+    ...z,
+    adjMin: Math.round(z.time[0] * b[i]),
+    adjMax: Math.round(z.time[1] * b[i])
+  }));
+
+  zones.forEach((z, i) => {
+    const t = timeAdjusted[i];
+    const isUpstairs = z.id === 'zone3';
+    html += `<div class="step">
+      <div class="step-header">
+        <span class="step-title">${zoneIcons[i]} ${z.name}</span>
+        <span class="step-time">${t.adjMin}-${t.adjMax}min</span>
+      </div>
+      <div class="step-desc">${z.desc}</div>
+      <div class="step-tags">
+        <span class="step-tag tag-${z.color}">第${i+1}区</span>
+        ${isWeekend && z.id === 'zone3' ? '<span class="step-tag tag-zone3">🧺 周末市集</span>' : ''}
+        ${isUpstairs ? '<span class="step-tag" style="background:#FCE4EC;color:#880E4F;">🏢 楼上铺</span>' : ''}
+      </div>
+      <button class="expand-btn" onclick="toggleDetail(this)">展开详情 ▾</button>
+      <div class="step-detail">
+        <ul>${z.subs.map(s => `<li><strong>${s.name}</strong> — ${s.type}<br><small>📍 ${s.loc}</small></li>`).join('')}</ul>
+        ${isUpstairs ? '<div style="margin-top:6px;padding:6px 10px;background:#FCE4EC;border-radius:8px;">🔍 <strong>楼上铺提示：</strong>注意看大厦入口的楼层指引牌，店铺多在 2-5 楼。</div>' : ''}
+        ${z.id === 'zone2' ? '<div style="margin-top:6px;padding:6px 10px;background:#FFF8E1;border-radius:8px;">⏰ <strong>营业提醒：</strong>部分店平日只开下午，周末全天营业。</div>' : ''}
+      </div>
+    </div>`;
+
+    if (i < 2) {
+      const walks = [['3min', '路过大三巴'], ['10min', '途经望德堂坊']];
+      html += `<div class="step transport">
+        <div class="step-header"><span class="step-title">🚶 步行前往下一区</span><span class="step-time">${walks[i][0]}</span></div>
+        <div class="step-desc">${walks[i][1]}</div>
+        <span class="step-tag tag-transport">步行</span>
+      </div>`;
+    }
+  });
+
+  // End
+  html += `<div class="step transport">
+    <div class="step-header"><span class="step-title">⛲ 议事亭前地（收尾）</span><span class="step-time">自由安排</span></div>
+    <div class="step-desc">喷水池广场、葡式建筑群 · 可顺路去福隆新街祥记面家</div>
+    <span class="step-tag tag-transport">终点</span>
+  </div>`;
+  html += `<div class="step transport">
+    <div class="step-header"><span class="step-title">🏨 返回威尼斯人</span><span class="step-time">15-25min</span></div>
+    <div class="step-desc">永利/星际免费穿梭巴士（推荐），或巴士 25/26A MOP 6</div>
+    <span class="step-tag tag-transport">🆓 免费巴士</span>
+  </div>`;
+
+  tl.innerHTML = html;
+
+  // Update total time
+  const totalMin = timeAdjusted.reduce((s, z) => s + z.adjMax, 0);
+  const totalH = Math.floor(totalMin / 60);
+  const totalM = totalMin % 60;
+  document.getElementById('totalTime').textContent = totalH > 0 ? `${totalH}h ${totalM}min` : `${totalM}min`;
+
+  // Update stats
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${zones.length}</div><div class="stat-label">中古区</div></div>
+    <div class="stat"><div class="stat-val">${zones.reduce((s,z)=>s+z.subs.length,0)}</div><div class="stat-label">店铺群</div></div>
+    <div class="stat"><div class="stat-val">${foods.length}</div><div class="stat-label">顺路小吃</div></div>
+    <div class="stat"><div class="stat-val">${totalH}h${totalM}m</div><div class="stat-label">纯逛时间</div></div>
+  `;
+
+  // Update map stats
+  document.getElementById('mapStats').innerHTML = document.getElementById('stats').innerHTML;
+
+  // Info bar
+  document.getElementById('infoBar').innerHTML = `
+    ${isWeekend ? '<span class="info-chip chip-weekend">📅 今天是周末！塔石广场有市集</span>' : '<span class="info-chip chip-time">📅 工作日 · 注意下午营业</span>'}
+    <span class="info-chip chip-cash">💵 带现金 MOP/HKD</span>
+    <span class="info-chip chip-upstairs">🏢 白马行楼上铺</span>
+    <span class="info-chip chip-time">🕚 店铺约11:00开门</span>
+  `;
+}
+
+function toggleDetail(btn) {
+  const detail = btn.nextElementSibling;
+  detail.classList.toggle('show');
+  btn.textContent = detail.classList.contains('show') ? '收起 ▴' : '展开详情 ▾';
+}
+
+// Render zones panel
+function renderZones() {
+  document.getElementById('panel-zones').innerHTML = zones.map(z => `
+    <div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);border-left:4px solid var(--${z.color});">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${z.icon} ${z.name}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">${z.desc}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px;">⏱ 建议 ${z.time[0]}-${z.time[1]} 分钟</div>
+      ${z.subs.map(s => `
+        <div style="padding:8px 10px;margin-bottom:4px;background:#faf7f2;border-radius:8px;">
+          <div style="font-size:13px;font-weight:600;">${s.name}</div>
+          <div style="font-size:11px;color:var(--muted);">${s.type}</div>
+          <div style="font-size:11px;color:var(--accent);">📍 ${s.loc}</div>
+        </div>
+      `).join('')}
+      ${z.id === 'zone3' ? '<div style="margin-top:8px;padding:8px 12px;background:#FCE4EC;border-radius:8px;font-size:12px;">🔍 <strong>楼上铺怎么找：</strong>到白马行后抬头看大厦外墙招牌，或进大堂看楼层水牌。目标楼层通常在 2-5F。</div>' : ''}
+      ${z.id === 'zone2' ? '<div style="margin-top:8px;padding:8px 12px;background:#FFF8E1;border-radius:8px;font-size:12px;">⏰ <strong>注意：</strong>疯堂斜巷部分店平日只开下午（14:00后），建议安排在午后。周末全天营业，氛围最好。</div>' : ''}
+    </div>
+  `).join('');
+}
+
+// Render food
+function renderFood() {
+  document.getElementById('foodList').innerHTML = foods.map(f => `
+    <div class="food-card">
+      <div class="food-emoji">${f.stop === '20min' ? '🍜' : f.stop === '15min' ? '🥛' : f.stop === '10min' ? '🍦' : '🍢'}</div>
+      <div class="food-info">
+        <div class="food-name">${f.name}</div>
+        <div class="food-item">${f.item}</div>
+        <div style="font-size:11px;color:var(--muted);">📍 ${f.area}</div>
+      </div>
+      <div class="food-time">${f.stop}</div>
+    </div>
+  `).join('');
+}
+
+// Render transport
+function renderTransport() {
+  document.getElementById('transportList').innerHTML = transport.map(t => `
+    <div class="trans-card">
+      <div class="route">${t.icon} ${t.from} → ${t.to}</div>
+      <div class="detail">${t.mode} · 约 ${t.time}</div>
+      <div class="price">${t.cost}</div>
+    </div>
+  `).join('');
+}
+
+// Tab switching
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+  if (name === 'map') { setTimeout(initMap, 100); }
+}
+
+// Init
+let currentMode = 'all';
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => switchTab(t.dataset.tab));
+});
+
+document.querySelectorAll('.pref-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pref-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    renderTimeline(currentMode);
+  });
+});
+
+// QR Code
+function showQR() {
+  const ip = window.location.hostname;
+  const port = window.location.port;
+  const url = `http://${ip}:${port}${window.location.pathname}`;
+  document.getElementById('qrSection').style.display = 'block';
+  document.getElementById('qrUrl').textContent = url;
+  document.getElementById('qrCode').innerHTML = '';
+  new QRCode(document.getElementById('qrCode'), {
+    text: url, width: 200, height: 200, colorDark: '#3c2415', colorLight: '#fdf6f0'
+  });
+  document.getElementById('qrSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Init
+renderTimeline('all');
+renderZones();
+renderFood();
+renderTransport();
+
+// Add QR button to header
+const qrBtn = document.createElement('button');
+qrBtn.textContent = '📱 二维码';
+qrBtn.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:16px;padding:4px 12px;font-size:12px;cursor:pointer;';
+qrBtn.onclick = () => { switchTab('route'); showQR(); };
+document.querySelector('.header').style.position = 'relative';
+document.querySelector('.header').appendChild(qrBtn);
+</script>
+</body>
+</html>
